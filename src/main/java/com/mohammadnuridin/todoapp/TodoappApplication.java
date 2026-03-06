@@ -1,4 +1,4 @@
-package mohammadnuridin.todoapp;
+package com.mohammadnuridin.todoapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
