@@ -1,9 +1,17 @@
 package com.mohammadnuridin.todoapp.modules.auth.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Request body untuk refresh token.
+ *
+ * Web → refresh_token tidak perlu di body (dibaca dari Cookie)
+ * Mobile → refresh_token wajib di body
+ *
+ * Validasi dilakukan di controller berdasarkan ClientType.
+ */
 public record RefreshTokenRequest(
 
-        @NotBlank(message = "{user.refresh.token.invalid}")
-        String refreshToken
-) {}
+                @JsonProperty("refresh_token") String refreshToken // nullable untuk web client
+) {
+}

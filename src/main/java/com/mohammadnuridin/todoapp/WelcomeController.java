@@ -4,12 +4,13 @@ import com.mohammadnuridin.todoapp.core.response.ApiResponse;
 import com.mohammadnuridin.todoapp.core.util.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class GreetingController {
+public class WelcomeController {
 
     private final MessageService msg;
 
@@ -20,11 +21,12 @@ public class GreetingController {
                 ApiResponse.ok("success", "Hello, welcome to the Todolist API!"));
     }
 
-    // ── GET /api/greet ────────────────────────────────────────
+    // ── GET /api/welcome ────────────────────────────────────────
     // Locale otomatis dari Accept-Language header via MessageService
-    @GetMapping("/greet")
-    public ResponseEntity<ApiResponse<String>> greet() {
+    @GetMapping("/welcome")
+    public ResponseEntity<ApiResponse<String>> welcome() {
         return ResponseEntity.ok(
-                ApiResponse.ok("success", msg.get("greeting")));
+                ApiResponse.ok("success", msg.get("welcome")));
     }
+
 }

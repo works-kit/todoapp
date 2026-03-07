@@ -2,7 +2,7 @@
 -- V4__seed_data.sql
 -- Seed: default admin user
 -- Password plain: Admin@123
--- Password BCrypt: $2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- Password BCrypt: $2a$12$3agZ7wIhd.4R5juY7cfF7OpPoLMrXRN2NamdwhFGPZD0avk9j6r0q
 -- ============================================================
 
 INSERT INTO
@@ -20,7 +20,7 @@ VALUES (
         UUID(),
         'Admin',
         'admin@todoapp.com',
-        '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        '$2a$12$3agZ7wIhd.4R5juY7cfF7OpPoLMrXRN2NamdwhFGPZD0avk9j6r0q',
         'ADMIN',
         TRUE,
         NOW(),

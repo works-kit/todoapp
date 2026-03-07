@@ -3,10 +3,9 @@ package com.mohammadnuridin.todoapp.modules.auth.service;
 import com.mohammadnuridin.todoapp.core.exception.AppException;
 import com.mohammadnuridin.todoapp.core.exception.ErrorCode;
 import com.mohammadnuridin.todoapp.core.security.JwtService;
+import com.mohammadnuridin.todoapp.modules.auth.dto.AuthResult;
 import com.mohammadnuridin.todoapp.modules.auth.dto.LoginRequest;
-import com.mohammadnuridin.todoapp.modules.auth.dto.RefreshTokenRequest;
 import com.mohammadnuridin.todoapp.modules.auth.dto.RegisterRequest;
-import com.mohammadnuridin.todoapp.modules.auth.dto.TokenResponse;
 import com.mohammadnuridin.todoapp.modules.user.domain.Role;
 import com.mohammadnuridin.todoapp.modules.user.domain.User;
 import com.mohammadnuridin.todoapp.modules.user.domain.UserDetailsImpl;
@@ -25,9 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final UserRepository        userRepository;
-    private final PasswordEncoder       passwordEncoder;
-    private final JwtService            jwtService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final TokenBlacklistService tokenBlacklistService;
 
@@ -47,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = User.builder()
                 .name(request.name())
-                .email(request.email())
+                .email(request.email().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
                 .isActive(true)
@@ -58,82 +57,70 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ── LOGIN ─────────────────────────────────────────────────
+    // Service tidak tahu web/mobile — controller yang handle perbedaannya
     @Override
     @Transactional
-    public TokenResponse login(LoginRequest request) {
-        // Spring Security handle validasi credentials + disabled account
+    public AuthResult login(LoginRequest request) {
         var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
+                new UsernamePasswordAuthenticationToken(
+                        request.email(), request.password()));
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        String accessToken  = jwtService.generateAccessToken(userDetails);
+        String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        // Simpan refresh token ke DB
         User user = userRepository.findByEmail(userDetails.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         user.setRefreshToken(refreshToken);
-        user.setRefreshTokenExpiredAt(
-                System.currentTimeMillis() + refreshTokenExpiration
-        );
+        user.setRefreshTokenExpiredAt(System.currentTimeMillis() + refreshTokenExpiration);
         userRepository.save(user);
 
         log.info("User logged in: {}", userDetails.getEmail());
-        return TokenResponse.of(accessToken, refreshToken, accessTokenExpiration / 1000);
+        return new AuthResult(accessToken, refreshToken, accessTokenExpiration / 1000);
     }
 
     // ── REFRESH TOKEN ─────────────────────────────────────────
     @Override
     @Transactional
-    public TokenResponse refreshToken(RefreshTokenRequest request) {
-        // Cari user berdasarkan refresh token di DB
-        User user = userRepository.findByRefreshToken(request.refreshToken())
+    public AuthResult refreshToken(String rawRefreshToken) {
+        User user = userRepository.findByRefreshToken(rawRefreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
 
-        // Validasi refresh token belum expired
         if (user.getRefreshTokenExpiredAt() == null ||
                 System.currentTimeMillis() > user.getRefreshTokenExpiredAt()) {
-            // Hapus refresh token yang expired
             user.setRefreshToken(null);
             user.setRefreshTokenExpiredAt(null);
             userRepository.save(user);
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
-        // Cek user masih aktif
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new AppException(ErrorCode.ACCOUNT_DISABLED);
         }
 
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
 
-        // Generate access token baru
-        String newAccessToken  = jwtService.generateAccessToken(userDetails);
+        String newAccessToken = jwtService.generateAccessToken(userDetails);
         String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
-        // Rotate refresh token — invalidasi yang lama, simpan yang baru
+        // Rotate refresh token
         user.setRefreshToken(newRefreshToken);
-        user.setRefreshTokenExpiredAt(
-                System.currentTimeMillis() + refreshTokenExpiration
-        );
+        user.setRefreshTokenExpiredAt(System.currentTimeMillis() + refreshTokenExpiration);
         userRepository.save(user);
 
-        log.info("Token refreshed for: {}", user.getEmail());
-        return TokenResponse.of(newAccessToken, newRefreshToken, accessTokenExpiration / 1000);
+        log.info("Token refreshed: {}", user.getEmail());
+        return new AuthResult(newAccessToken, newRefreshToken, accessTokenExpiration / 1000);
     }
 
     // ── LOGOUT ────────────────────────────────────────────────
     @Override
     @Transactional
     public void logout(String accessToken) {
-        // Blacklist access token di Redis
         long ttl = jwtService.getRemainingTtlSeconds(accessToken);
         tokenBlacklistService.blacklist(accessToken, ttl);
 
-        // Hapus refresh token dari DB
         try {
             String email = jwtService.extractEmail(accessToken);
             userRepository.findByEmail(email).ifPresent(user -> {
@@ -142,7 +129,6 @@ public class AuthServiceImpl implements AuthService {
                 userRepository.save(user);
             });
         } catch (Exception e) {
-            // Token mungkin sudah expired tapi tetap logout — tidak perlu error
             log.warn("Could not extract email during logout: {}", e.getMessage());
         }
 

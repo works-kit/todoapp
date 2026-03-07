@@ -34,7 +34,8 @@ public class SecurityConfig {
     // ── Endpoint yang tidak butuh autentikasi ─────────────────
     private static final String[] PUBLIC_ENDPOINTS = {
             "/",
-            "/greet",
+            "/welcome",
+            "/hash", // TEMPORARY — hapus setelah dapat hash
             "/auth/login",
             "/auth/register",
             "/auth/refresh-token",
