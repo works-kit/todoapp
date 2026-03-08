@@ -1,4 +1,4 @@
-package com.mohammadnuridin.todoapp.core.security;
+package com.mohammadnuridin.todoapp.core.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -93,8 +93,8 @@ public class JwtService {
 
     // ── Internal: build token ─────────────────────────────────
     private String buildToken(Map<String, Object> extraClaims,
-                              String subject,
-                              long expiration) {
+            String subject,
+            long expiration) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .claims(extraClaims)

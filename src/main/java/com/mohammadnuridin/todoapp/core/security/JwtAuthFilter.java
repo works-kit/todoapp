@@ -1,5 +1,6 @@
 package com.mohammadnuridin.todoapp.core.security;
 
+import com.mohammadnuridin.todoapp.core.util.JwtService;
 import com.mohammadnuridin.todoapp.modules.auth.service.TokenBlacklistService;
 import com.mohammadnuridin.todoapp.modules.auth.service.UserDetailsServiceImpl;
 

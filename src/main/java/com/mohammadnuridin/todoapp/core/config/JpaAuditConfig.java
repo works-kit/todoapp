@@ -1,4 +1,4 @@
-package com.mohammadnuridin.todoapp.core.audit;
+package com.mohammadnuridin.todoapp.core.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;

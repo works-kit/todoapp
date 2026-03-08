@@ -2,7 +2,7 @@ package com.mohammadnuridin.todoapp.modules.auth.service;
 
 import com.mohammadnuridin.todoapp.core.exception.AppException;
 import com.mohammadnuridin.todoapp.core.exception.ErrorCode;
-import com.mohammadnuridin.todoapp.core.security.JwtService;
+import com.mohammadnuridin.todoapp.core.util.JwtService;
 import com.mohammadnuridin.todoapp.modules.auth.dto.AuthResult;
 import com.mohammadnuridin.todoapp.modules.auth.dto.LoginRequest;
 import com.mohammadnuridin.todoapp.modules.auth.dto.RegisterRequest;
