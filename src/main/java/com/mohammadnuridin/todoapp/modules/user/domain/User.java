@@ -1,17 +1,32 @@
 package com.mohammadnuridin.todoapp.modules.user.domain;
 
+import java.time.Instant;
+
+import org.hibernate.annotations.Where;
+
 import com.mohammadnuridin.todoapp.core.audit.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import com.mohammadnuridin.todoapp.core.audit.BaseEntityUser;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
+@Where(clause = "is_active = true AND deleted_at IS NULL") // ← Hibernate filter otomatis
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends BaseEntity {
+public class User extends BaseEntityUser {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -33,7 +48,6 @@ public class User extends BaseEntity {
     @Column(name = "refresh_token_expired_at")
     private Long refreshTokenExpiredAt;
 
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private Boolean isActive = true;
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 }

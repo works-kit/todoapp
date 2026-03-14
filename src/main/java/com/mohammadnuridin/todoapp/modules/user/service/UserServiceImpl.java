@@ -1,18 +1,23 @@
 package com.mohammadnuridin.todoapp.modules.user.service;
 
+import java.time.Instant;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mohammadnuridin.todoapp.core.exception.AppException;
 import com.mohammadnuridin.todoapp.core.exception.ErrorCode;
 import com.mohammadnuridin.todoapp.core.util.SecurityUtil;
+import com.mohammadnuridin.todoapp.modules.auth.service.TokenBlacklistService;
 import com.mohammadnuridin.todoapp.modules.user.domain.User;
 import com.mohammadnuridin.todoapp.modules.user.dto.ChangePasswordRequest;
 import com.mohammadnuridin.todoapp.modules.user.dto.UpdateProfileRequest;
 import com.mohammadnuridin.todoapp.modules.user.dto.UserResponse;
 import com.mohammadnuridin.todoapp.modules.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -21,6 +26,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklistService tokenBlacklistService;
 
     // ── GET PROFILE ───────────────────────────────────────────
     @Override
@@ -96,13 +102,14 @@ public class UserServiceImpl implements UserService {
     public void deleteAccount() {
         User user = getCurrentUserEntity();
 
-        // Soft delete — set isActive = false, tidak hapus data
+        // Soft delete dengan timestamp
         user.setIsActive(false);
+        user.setDeletedAt(Instant.now());
         user.setRefreshToken(null);
         user.setRefreshTokenExpiredAt(null);
 
         userRepository.save(user);
-        log.info("Account deactivated for user: {}", user.getId());
+        log.info("Account soft-deleted for user: {}", user.getId());
     }
 
     // ── Helper: ambil entity user dari SecurityContext ────────

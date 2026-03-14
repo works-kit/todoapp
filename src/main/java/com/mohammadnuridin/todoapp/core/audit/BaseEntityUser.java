@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-public abstract class BaseEntity {
+public abstract class BaseEntityUser {
 
     @Id
     @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false, updatable = false)
@@ -30,8 +30,8 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 
     // ── Soft Delete ───────────────────────────────────────────
-    @Column(name = "is_deleted", nullable = false)
-    private Boolean isDeleted = false;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
@@ -43,12 +43,12 @@ public abstract class BaseEntity {
 
     // Helper method
     public void softDelete() {
-        this.isDeleted = true;
+        this.isActive = false;
         this.deletedAt = Instant.now();
     }
 
     public void restore() {
-        this.isDeleted = false;
+        this.isActive = true;
         this.deletedAt = null;
     }
 

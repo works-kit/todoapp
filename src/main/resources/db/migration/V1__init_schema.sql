@@ -15,7 +15,6 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE INDEX idx_user_email (email),
-    INDEX idx_user_active (is_active),
     FULLTEXT INDEX idx_user_search (name, email)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 

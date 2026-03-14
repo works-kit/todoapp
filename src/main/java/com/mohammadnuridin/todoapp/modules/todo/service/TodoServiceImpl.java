@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -49,6 +50,18 @@ public class TodoServiceImpl implements TodoService {
                 .map(TodoResponse::from);
 
         return PageResponse.of(page);
+    }
+
+    // ── GET ALL (tanpa filter, semua milik user) ──────────────
+    @Override
+    @Transactional(readOnly = true)
+    public List<TodoResponse> getAllUnfiltered() {
+        String userId = SecurityUtil.getCurrentUserId();
+
+        return todoRepository.findByUserIdAndIsDeletedFalse(userId, Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(TodoResponse::from)
+                .toList();
     }
 
     // ── GET BY ID ─────────────────────────────────────────────
@@ -117,10 +130,16 @@ public class TodoServiceImpl implements TodoService {
     // ── DELETE ────────────────────────────────────────────────
     @Override
     @Transactional
-    public void delete(String id) {
-        Todo todo = getOwnedTodo(id);
-        todoRepository.delete(todo);
-        log.info("Todo deleted: {} for user: {}", id, SecurityUtil.getCurrentUserId());
+    public void delete(String todoId) {
+        String userId = SecurityUtil.getCurrentUserId();
+
+        Todo todo = todoRepository.findByIdAndUserIdAndIsDeletedFalse(todoId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.TODO_NOT_FOUND));
+
+        todo.softDelete(); // dari BaseEntity
+        todoRepository.save(todo);
+
+        log.info("Todo soft-deleted: {}", todoId);
     }
 
     // ── TOGGLE COMPLETE ───────────────────────────────────────

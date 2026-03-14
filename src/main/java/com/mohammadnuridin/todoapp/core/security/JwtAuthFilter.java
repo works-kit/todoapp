@@ -50,6 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (tokenBlacklistService.isBlacklisted(token)) {
                 log.warn("Blacklisted token used: {}", request.getRequestURI());
                 filterChain.doFilter(request, response);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token revoked");
                 return;
             }
 

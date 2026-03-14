@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.email().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
-                .isActive(true)
+
                 .build();
 
         userRepository.save(user);

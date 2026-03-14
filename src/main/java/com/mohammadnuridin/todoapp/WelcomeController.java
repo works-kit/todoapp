@@ -4,7 +4,6 @@ import com.mohammadnuridin.todoapp.core.response.ApiResponse;
 import com.mohammadnuridin.todoapp.core.util.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
