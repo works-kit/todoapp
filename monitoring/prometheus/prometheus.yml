@@ -6,6 +6,6 @@ scrape_configs:
   - job_name: "todolist-api-prod"
     metrics_path: "/internal/actuator/prometheus"
     static_configs:
-      - targets: ["todo_app:8082"] # ← FIX: spring_app → todo_app
+      - targets: ["todoapp:8082"] # ← FIX: spring_app → todoapp
     scrape_interval: 10s
     scrape_timeout: 5s
