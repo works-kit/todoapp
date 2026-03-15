@@ -5,7 +5,8 @@
          PROPERTIES
     ═══════════════════════════════════════════════════════ -->
     <property name="APP_NAME" value="todoapp" />
-    <property name="LOG_PATH" value="logs" />
+    <!-- Docker: gunakan path absolut /app/logs agar direktori selalu tersedia -->
+    <property name="LOG_PATH" value="${LOG_PATH:-/app/logs}" />
     <property name="LOG_FILE" value="${LOG_PATH}/${APP_NAME}" />
 
     <!-- ═══════════════════════════════════════════════════════
@@ -14,9 +15,6 @@
          Aktif sejak startup — SEBELUM Spring membaca profile.
          Ini yang mencegah warning "No appenders present in
          context [default]" dari Logback saat boot awal.
-
-         Format: plain text (aman untuk semua environment).
-         Di-override secara efektif oleh <root> di tiap profile.
     ═══════════════════════════════════════════════════════ -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -35,42 +33,49 @@
     ═══════════════════════════════════════════════════════ -->
 
     <!-- ── CONSOLE: JSON structured (staging & prod) ─────────
-         Override appender CONSOLE di atas dengan JSON encoder
+         FIX: <providers> (plural) dihapus — tidak didukung di
+         logstash-logback-encoder >= 7.x. Gunakan <provider>
+         (singular) per item, atau biarkan LogstashEncoder
+         menggunakan default providers-nya (timestamp, level,
+         logger, thread, message, mdc, stackTrace sudah
+         include by default).
+
+         Untuk custom field name, gunakan
+         <fieldNames> block sebagai gantinya.
     ──────────────────────────────────────────────────────── -->
     <springProfile name="staging,prod">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <providers>
-                    <timestamp>
-                        <fieldName>timestamp</fieldName>
-                        <pattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</pattern>
-                    </timestamp>
-                    <logLevel>
-                        <fieldName>level</fieldName>
-                    </logLevel>
-                    <loggerName>
-                        <fieldName>logger</fieldName>
-                        <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
-                    </loggerName>
-                    <threadName>
-                        <fieldName>thread</fieldName>
-                    </threadName>
-                    <message>
-                        <fieldName>message</fieldName>
-                    </message>
-                    <mdc />
-                    <stackTrace>
-                        <fieldName>stack_trace</fieldName>
-                        <throwableConverter
-                            class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
-                            <maxDepthPerCause>10</maxDepthPerCause>
-                            <shortenedClassNameLength>36</shortenedClassNameLength>
-                            <exclude>sun\.reflect\..*</exclude>
-                            <exclude>java\.lang\.reflect\..*</exclude>
-                        </throwableConverter>
-                    </stackTrace>
-                </providers>
+
+                <!-- Custom field names — pengganti <providers> lama -->
+                <fieldNames>
+                    <timestamp>timestamp</timestamp>
+                    <level>level</level>
+                    <logger>logger</logger>
+                    <thread>thread</thread>
+                    <message>message</message>
+                    <stackTrace>stack_trace</stackTrace>
+                </fieldNames>
+
+                <!-- Format timestamp -->
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</timestampPattern>
+
+                <!-- Panjang nama logger yang dipersingkat -->
+                <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+
+                <!-- Custom field tambahan -->
                 <customFields>{"app":"${APP_NAME}"}</customFields>
+
+                <!-- Stack trace converter — pengganti <stackTrace> provider lama -->
+                <throwableConverter
+                    class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxLength>2048</maxLength>
+                    <shortenedClassNameLength>36</shortenedClassNameLength>
+                    <rootCauseFirst>true</rootCauseFirst>
+                    <exclude>sun\.reflect\..*</exclude>
+                    <exclude>java\.lang\.reflect\..*</exclude>
+                </throwableConverter>
+
             </encoder>
         </appender>
     </springProfile>
@@ -81,17 +86,22 @@
     <springProfile name="dev,staging,prod">
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_FILE}.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
                 <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-                <timeBasedFileNamingAndTriggeringPolicy
-                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                    <maxFileSize>50MB</maxFileSize>
-                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxFileSize>50MB</maxFileSize>
                 <maxHistory>30</maxHistory>
                 <totalSizeCap>1GB</totalSizeCap>
             </rollingPolicy>
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <customFields>{"app":"${APP_NAME}"}</customFields>
+                <throwableConverter
+                    class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxLength>2048</maxLength>
+                    <shortenedClassNameLength>36</shortenedClassNameLength>
+                    <rootCauseFirst>true</rootCauseFirst>
+                    <exclude>sun\.reflect\..*</exclude>
+                    <exclude>java\.lang\.reflect\..*</exclude>
+                </throwableConverter>
             </encoder>
         </appender>
 
@@ -119,6 +129,14 @@
             </rollingPolicy>
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <customFields>{"app":"${APP_NAME}"}</customFields>
+                <throwableConverter
+                    class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxLength>2048</maxLength>
+                    <shortenedClassNameLength>36</shortenedClassNameLength>
+                    <rootCauseFirst>true</rootCauseFirst>
+                    <exclude>sun\.reflect\..*</exclude>
+                    <exclude>java\.lang\.reflect\..*</exclude>
+                </throwableConverter>
             </encoder>
         </appender>
 
